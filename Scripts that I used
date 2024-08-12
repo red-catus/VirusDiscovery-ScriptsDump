@@ -1,0 +1,106 @@
+#Combine multiple files into one:
+
+
+cat input files > ./output file
+
+
+
+
+#Trimmomatic Trimming
+
+#adaptor trimming
+java -jar trimmomatic-0.39.jar SE \
+-threads 4 \
+-phred33 \
+/path/to/fastq/file.fq \
+/output/name/filq_trimmed.fastq \
+ILLUMINACLIP:/path/where/Trimmomatic/wasDownloaded/Trimmomatic-0.39/adapters/TruSeq3-SE.fa:3:20:10:1:true \
+LEADING:3 TRAILING:3 \
+SLIDINGWINDOW:4:30 \
+MINLEN:0
+
+
+
+#Unzip file and keep the copy of unzipped file
+
+gunzip -k unzipped_filename
+
+
+
+#Downloading STAR aligner
+
+wget https://github.com/alexdobin/STAR/archive/2.7.3a.tar.gz
+
+tar -xzf 2.7.3a.tar.gz
+
+cd STAR-2.7.3a/source
+
+make STAR
+
+
+#Install gffread (to convert annotation file gff to gtf)
+
+
+cd /some/build/dir
+git clone https://github.com/gpertea/gclib
+git clone https://github.com/gpertea/gffread
+cd gffread
+make release
+sudo apt install cufflinks
+
+
+#convert gff to gtf
+
+gffread -E -F -O -T /path/Ref_Genome_Wheat/GCA_900519105.1_iwgsc_refseqv1.0_genomic.gff -o /path/Project/Ref_Genome_Wheat/GCA_900519105.1_iwgsc_refseqv1.0_genomic.gtf
+
+#Create genome index using STAR
+
+/Path/STAR-2.7.3a/bin/Linux_x86_64/STAR --runThreadN 8 \
+ --runMode genomeGenerate \
+ --limitGenomeGenerateRAM 39800933930 \       #when genome is too large, you need to set a limit
+ --genomeDir /Path/RNASeq/STAR-2.7.3a/bin/GenIndex \
+ --genomeFastaFiles /Path/RNASeq/STAR-2.7.3a/bin/Linux_x86_64/Triticum_aestivum.IWGSC.dna.toplevel.fa \
+ --sjdbGTFfile /Path/RNASeq/STAR-2.7.3a/bin/Linux_x86_64/Triticum_aestivum.IWGSC.45.gtf \
+ --sjdbOverhang 90
+
+
+#Mapping with STAR and collecting unmapped reads:
+
+/path/RNASeq/STAR-2.7.3a/bin/Linux_x86_64/STAR --runThreadN 4 \
+--runMode alignReads \
+--genomeDir /path/RNASeq/STAR-2.7.3a/bin/GenIndex \
+--readFilesIn /path/RNASeq2021/Trimmomatic/Trimmed/GL20trim.fastq \
+--outFileNamePrefix /path/RNASeq2021/Staraligned/gl20/GL20 \
+--outSAMattrIHstart 0 \
+--outSAMmultNmax 1 \
+--outSAMtype BAM SortedByCoordinate \
+--outFilterMismatchNmax 5 \
+--outFilterMismatchNoverReadLmax 0.04 \
+--outFilterMatchNmin 5 \
+--outFilterMatchNminOverLread 0.66 \
+--outFilterMultimapNmax 20 \
+--seedSearchStartLmax 50 \
+--outReadsUnmapped Fastx
+
+
+After collecting unmapped reads, you can use different programs like CLC Woirkbench to do BLAST searches against the virus database. 
+
+
+
+References: 
+
+Trimmomatic:
+
+Bolger, A. M., Lohse, M., & Usadel, B. (2014). Trimmomatic: A flexible trimmer for Illumina Sequence Data. Bioinformatics, btu170.
+
+http://www.usadellab.org/cms/index.php?page=trimmomatic
+
+Wheat Genome
+
+https://plants.ensembl.org/Triticum_aestivum/Info/Index
+
+STAR
+
+https://github.com/alexdobin/STAR
+
+https://physiology.med.cornell.edu/faculty/skrabanek/lab/angsd/lecture_notes/STARmanual.pdf
